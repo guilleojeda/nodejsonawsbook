@@ -1,0 +1,567 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for highly available Node.js app
+
+Parameters:
+  DbUsername:
+    Description: 'The master user name for PostgreSQL.'
+    Type: String
+    Default: SimpleAWS
+  DbPassword:
+    Description: 'The master user password for PostgreSQL.'
+    NoEcho: true
+    Type: String
+    MinLength: 8
+    MaxLength: 41
+
+Mappings:
+  SubnetConfig:
+    VPC:
+      CIDR: "10.0.0.0/16"
+    Public0:
+      CIDR: "10.0.0.0/24"
+    Public1:
+      CIDR: "10.0.1.0/24"
+    Private0:
+      CIDR: "10.0.16.0/20"
+    Private1:
+      CIDR: "10.0.32.0/20"
+  
+  AZRegions:
+    ca-central-1:
+      AZs: ["a", "b"]
+    eu-central-1:
+      AZs: ["a", "b"]
+    eu-west-1:
+      AZs: ["a", "b"]
+    eu-west-2:
+      AZs: ["a", "b"]
+    sa-east-1:
+      AZs: ["a", "b"]
+    us-east-1:
+      AZs: ["a", "b"]
+    us-east-2:
+      AZs: ["a", "b"]
+    us-west-1:
+      AZs: ["a", "b"]
+    us-west-2:
+      AZs: ["a", "b"]
+
+Resources:
+  
+  ## VPC
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      EnableDnsSupport: "true"
+      EnableDnsHostnames: "true"
+      CidrBlock:
+        Fn::FindInMap:
+          - "SubnetConfig"
+          - "VPC"
+          - "CIDR"
+
+  PublicSubnet0:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [ 0, !FindInMap [ "AZRegions", !Ref "AWS::Region", "AZs" ] ]
+      CidrBlock:
+        Fn::FindInMap:
+          - "SubnetConfig"
+          - "Public0"
+          - "CIDR"
+      MapPublicIpOnLaunch: "true"
+
+  PublicSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [ 1, !FindInMap [ "AZRegions", !Ref "AWS::Region", "AZs" ] ]
+      CidrBlock:
+        Fn::FindInMap:
+          - "SubnetConfig"
+          - "Public1"
+          - "CIDR"
+      MapPublicIpOnLaunch: "true"
+
+  PrivateSubnet0:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [ 0, !FindInMap [ "AZRegions", !Ref "AWS::Region", "AZs" ] ]
+      CidrBlock:
+        Fn::FindInMap:
+          - "SubnetConfig"
+          - "Private0"
+          - "CIDR"
+
+  PrivateSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      AvailabilityZone:
+        Fn::Sub:
+          - "${AWS::Region}${AZ}"
+          - AZ: !Select [ 1, !FindInMap [ "AZRegions", !Ref "AWS::Region", "AZs" ] ]
+      CidrBlock:
+        Fn::FindInMap:
+          - "SubnetConfig"
+          - "Private1"
+          - "CIDR"
+
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+
+  GatewayToInternet:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      InternetGatewayId:
+        Ref: "InternetGateway"
+
+  PublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+
+  PublicRoute:
+    Type: "AWS::EC2::Route"
+    DependsOn: "GatewayToInternet"
+    Properties:
+      RouteTableId:
+        Ref: "PublicRouteTable"
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId:
+        Ref: "InternetGateway"
+
+  PublicSubnetRouteTableAssociation0:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId:
+        Ref: "PublicSubnet0"
+      RouteTableId:
+        Ref: "PublicRouteTable"
+
+  PublicSubnetRouteTableAssociation1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId:
+        Ref: "PublicSubnet1"
+      RouteTableId:
+        Ref: "PublicRouteTable"
+
+  PublicNetworkAcl:
+    Type: "AWS::EC2::NetworkAcl"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+
+  InboundHTTPPublicNetworkAclEntry:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId:
+        Ref: "PublicNetworkAcl"
+      RuleNumber: "100"
+      Protocol: "-1"
+      RuleAction: "allow"
+      Egress: "false"
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "0"
+        To: "65535"
+
+  OutboundPublicNetworkAclEntry:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId:
+        Ref: "PublicNetworkAcl"
+      RuleNumber: "100"
+      Protocol: "-1"
+      RuleAction: "allow"
+      Egress: "true"
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "0"
+        To: "65535"
+
+  PublicSubnetNetworkAclAssociation0:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId:
+        Ref: "PublicSubnet0"
+      NetworkAclId:
+        Ref: "PublicNetworkAcl"
+
+  PublicSubnetNetworkAclAssociation1:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId:
+        Ref: "PublicSubnet1"
+      NetworkAclId:
+        Ref: "PublicNetworkAcl"
+
+  PrivateRouteTable0:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        -
+          Key: "Name"
+          Value: !Join
+            - ''
+            - - !Sub vpc-${AWS::StackName}
+              - '-private-route-table-0'
+
+  PrivateRouteTable1:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        -
+          Key: "Name"
+          Value: !Join
+            - ''
+            - - !Sub vpc-${AWS::StackName}
+              - '-private-route-table-1'
+
+  PrivateSubnetRouteTableAssociation0:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId:
+        Ref: "PrivateSubnet0"
+      RouteTableId:
+        Ref: "PrivateRouteTable0"
+
+  PrivateSubnetRouteTableAssociation1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId:
+        Ref: "PrivateSubnet1"
+      RouteTableId:
+        Ref: "PrivateRouteTable1"
+
+  ## Database
+  DBEncryptionKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "KMS key used to encrypt RDS instance created in CFN stack: ${AWS::StackName}"
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: default
+        Statement:
+          Sid: "Default"
+          Effect: "Allow"
+          Principal:
+            AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+          Action: "kms:*"
+          Resource: "*"
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: CloudFormation managed DB subnet group
+      SubnetIds: 
+        - !Ref PrivateSubnet0
+        - !Ref PrivateSubnet1
+
+  DatabaseCluster:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DatabaseName: 'SimpleAWS'
+      DBClusterIdentifier: !Join [ '-', [ 'SimpleAWS', 'cluster', !Ref 'AWS::StackName' ] ]
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      Engine: 'aurora-postgresql'
+      EngineVersion: '14.4'
+      Port: 5432
+      EngineMode: provisioned
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: '09:54-10:24'
+      PreferredMaintenanceWindow: Sun:04:00-Sun:08:00
+      VpcSecurityGroupIds: 
+        - !GetAtt SimpleAWSDatabaseSG.GroupId
+      MasterUsername: !Ref DbUsername
+      MasterUserPassword: !Ref DbPassword
+      EnableIAMDatabaseAuthentication: false
+      KmsKeyId: !Ref DBEncryptionKMSKey
+      StorageEncrypted: true
+    DependsOn:
+      - DatabaseSubnetGroup
+
+  RDSDBInstance1: 
+    Type: "AWS::RDS::DBInstance"
+    Properties: 
+      DBClusterIdentifier: !Ref DatabaseCluster
+      DBInstanceClass: 'db.t4g.medium'
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      Engine: 'aurora-postgresql'
+      EngineVersion: '14.4'
+      AvailabilityZone: 
+        Fn::GetAtt:
+          - PrivateSubnet0
+          - AvailabilityZone
+  RDSDBInstance2: 
+    Type: "AWS::RDS::DBInstance"
+    Properties: 
+      DBClusterIdentifier: !Ref DatabaseCluster
+      DBInstanceClass: 'db.t4g.medium'
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      Engine: 'aurora-postgresql'
+      EngineVersion: '14.4'
+      AvailabilityZone: 
+        Fn::GetAtt:
+          - PrivateSubnet1
+          - AvailabilityZone
+
+  ## ECS
+  SimpleAWSECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: SimpleAWSNodejsAppCluster
+
+  SimpleAWSNodejsAppTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: SimpleAWSNodejsApp
+      Cpu: 256
+      Memory: 512
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !Ref TaskExecutionRole
+      ContainerDefinitions:
+        - Name: SimpleAWSNodejsApp
+          Image: httpd
+          PortMappings:
+            - ContainerPort: 3000
+          Environment:
+            - Name: DB_HOST
+              Value: !GetAtt DatabaseCluster.Endpoint.Address
+            - Name: DB_PORT
+              Value: !GetAtt DatabaseCluster.Endpoint.Port
+            - Name: DB_USER
+              Value: !Ref DbUsername
+            - Name: DB_PASS
+              Value: !Ref DbPassword
+            - Name: DB_NAME
+              Value: 'SimpleAWS'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: SimpleAWSNodejsAppLogs
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  SimpleAWSNodejsService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref SimpleAWSECSCluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref SimpleAWSNodejsAppTaskDefinition
+      DesiredCount: 2
+      ServiceName: SimpleAWSNodejsService
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref PublicSubnet0
+            - !Ref PublicSubnet1
+          SecurityGroups:
+            - !Ref SimpleAWSNodejsAppSG
+      LoadBalancers:
+        - ContainerName: SimpleAWSNodejsApp
+          ContainerPort: 3000
+          TargetGroupArn: !Ref SimpleAWSNodejsTG
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      HealthCheckGracePeriodSeconds: 30
+
+  SimpleAWSNodejsLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: SimpleAWSNodejsLB
+      Type: application
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnet0
+        - !Ref PublicSubnet1
+      SecurityGroups:
+        - !Ref SimpleAWSNodejsAppLBSG
+
+  SimpleAWSNodejsTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: SimpleAWSNodejsTG
+      Port: 3000
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      TargetType: ip
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+
+  SimpleAWSNodejsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref SimpleAWSNodejsLB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref SimpleAWSNodejsTG
+
+  SimpleAWSNodejsScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 10
+      MinCapacity: 2
+      ResourceId: !Sub service/${SimpleAWSECSCluster}/${SimpleAWSNodejsService}
+      RoleARN: !GetAtt AutoScalingServiceLinkedRole.Arn
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  SimpleAWSNodejsScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: SimpleAWSNodejsScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref SimpleAWSNodejsScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        ScaleInCooldown: 300
+        ScaleOutCooldown: 60
+        TargetValue: 50
+
+  AutoScalingServiceLinkedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - application-autoscaling.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole
+
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: SimpleAWSNodejsAppLogs
+      RetentionInDays: 14
+
+  ## ECR
+
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: simpleawsnodejsapp
+
+  ## Security Groups
+
+  SimpleAWSNodejsAppSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SimpleAWSNodejsAppSG
+      GroupDescription: Security Group for the Simple AWS Nodejs App
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref SimpleAWSNodejsAppLBSG
+
+  SimpleAWSDatabaseSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SimpleAWSDatabaseSG
+      GroupDescription: Security Group for the Simple AWS Database
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref SimpleAWSNodejsAppSG
+
+  SimpleAWSNodejsAppLBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SimpleAWSNodejsAppLBSG
+      GroupDescription: Security Group for the Simple AWS Nodejs App Load Balancer
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+
+  ECSALBDNSName:
+    Description: DNS Name of the Application Load Balancer
+    Value: !GetAtt SimpleAWSNodejsLB.DNSName
+
+  ECRRepositoryURL:
+    Description: ECR Repository URL
+    Value: !GetAtt ECRRepository.RepositoryUri
+
+  DatabaseEndpoint:
+    Description: The database endpoint for the RDS Aurora cluster
+    Value: !GetAtt DatabaseCluster.Endpoint.Address
+    Export:
+      Name: !Sub "${AWS::StackName}-DatabaseEndpoint"
+
+  PushDockerImageCommands:
+    Description: Commands to push the Docker image to ECR
+    Value: !Sub |
+      aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${ECRRepository.RepositoryUri}
+      docker buildx build --platform=linux/amd64 -t simpleawsnodejsapp .
+      docker tag simpleawsnodejsapp:latest ${ECRRepository.RepositoryUri}:latest
+      docker push ${ECRRepository.RepositoryUri}:latest
