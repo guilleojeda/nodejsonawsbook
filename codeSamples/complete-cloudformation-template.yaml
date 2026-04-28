@@ -10,6 +10,11 @@ Parameters:
     Description: 'Aurora PostgreSQL engine version. Use a currently supported version in your Region.'
     Type: String
     Default: '16.8'
+  ServiceDesiredCount:
+    Description: 'Number of ECS tasks to run. Use 0 for the first stack creation, push the image, then update to 2.'
+    Type: Number
+    Default: 0
+    MinValue: 0
 
 Mappings:
   SubnetConfig:
@@ -405,10 +410,11 @@ Resources:
       Cluster: !Ref SimpleAWSECSCluster
       LaunchType: FARGATE
       TaskDefinition: !Ref SimpleAWSNodejsAppTaskDefinition
-      DesiredCount: 2
+      DesiredCount: !Ref ServiceDesiredCount
       ServiceName: SimpleAWSNodejsService
       NetworkConfiguration:
         AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
           Subnets:
             - !Ref PublicSubnet0
             - !Ref PublicSubnet1
@@ -467,7 +473,7 @@ Resources:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
       MaxCapacity: 10
-      MinCapacity: 2
+      MinCapacity: !Ref ServiceDesiredCount
       ResourceId: !Sub service/${SimpleAWSECSCluster}/${SimpleAWSNodejsService}
       RoleARN: !GetAtt AutoScalingServiceLinkedRole.Arn
       ScalableDimension: ecs:service:DesiredCount
@@ -566,6 +572,10 @@ Outputs:
     Description: ECR Repository URL
     Value: !GetAtt ECRRepository.RepositoryUri
 
+  ECRRegistryURL:
+    Description: ECR registry host for Docker login
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}"
+
   DatabaseEndpoint:
     Description: The database endpoint for the RDS Aurora cluster
     Value: !GetAtt DatabaseCluster.Endpoint.Address
@@ -575,7 +585,8 @@ Outputs:
   PushDockerImageCommands:
     Description: Commands to push the Docker image to ECR
     Value: !Sub |
-      aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${ECRRepository.RepositoryUri}
-      docker buildx build --platform=linux/amd64 -t simpleawsnodejsapp .
+      aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}
+      docker build --platform=linux/amd64 -t simpleawsnodejsapp .
       docker tag simpleawsnodejsapp:latest ${ECRRepository.RepositoryUri}:latest
       docker push ${ECRRepository.RepositoryUri}:latest
+      # After the image is pushed, update the stack parameter ServiceDesiredCount to 2.
