@@ -1,0 +1,16 @@
+{
+  "name": "simple-aws-nodejs-app-tracing",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node -r ./tracing.js app.js"
+  },
+  "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.73.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.215.0",
+    "@opentelemetry/sdk-node": "^0.215.0",
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2",
+    "pg": "^8.10.0"
+  }
+}

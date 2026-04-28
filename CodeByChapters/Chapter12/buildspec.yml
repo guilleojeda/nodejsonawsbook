@@ -1,31 +1,35 @@
 version: 0.2
 
+env:
+  secrets-manager:
+    DOCKERHUB_USERNAME: "DockerHubCredentials:username"
+    DOCKERHUB_PASSWORD: "DockerHubCredentials:password"
+
 phases:
   pre_build:
     commands:
-      - echo Logging in to Docker Hub
-      - aws secretsmanager get-secret-value --secret-id DockerHubCredentials --query SecretString --output text | jq -r 'fromjson | to_entries | .[] | .key + "=" + .value' > docker_credentials.env
-      - source docker_credentials.env
-      - docker login -u $username -p $password
-      - rm docker_credentials.env
+      - echo Logging in to Docker Hub...
+      - echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
       - echo Logging in to Amazon ECR...
       - aws --version
-      - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
-      - REPOSITORY_URI=$(aws ecr describe-repositories --repository-names $ECR_REPOSITORY --query 'repositories[0].repositoryUri' --output text)
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
+      - REPOSITORY_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY"
+      - IMAGE_TAG="$CODEBUILD_RESOLVED_SOURCE_VERSION"
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker buildx build --platform=linux/amd64 -t $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION .
+      - docker buildx build --platform=linux/amd64 -t "$REPOSITORY_URI:$IMAGE_TAG" .
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
-      - docker tag $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION $REPOSITORY_URI:latest
-      - docker push $REPOSITORY_URI:latest
+      - docker push "$REPOSITORY_URI:$IMAGE_TAG"
+      - docker tag "$REPOSITORY_URI:$IMAGE_TAG" "$REPOSITORY_URI:latest"
+      - docker push "$REPOSITORY_URI:latest"
       - echo Writing image definitions file...
-      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s"}]' "$CONTAINER_NAME" "$REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
 artifacts:
-  files: imagedefinitions.json
+  files:
+    - imagedefinitions.json
   discard-paths: yes

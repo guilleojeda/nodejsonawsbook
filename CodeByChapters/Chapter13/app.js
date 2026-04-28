@@ -4,19 +4,14 @@ const {
     Pool
 } = require('pg');
 const bodyParser = require('body-parser');
-const AWSXRay = require('aws-xray-sdk'); // Import the X-Ray SDK
-const AWSXRayPostgres = require('aws-xray-sdk-postgres'); // Import the X-Ray SDK for Postgres
-const pg = AWSXRayPostgres.capturePostgres(require('pg'));
 
-const pool = new pg.Pool({
+const pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,
     database: process.env.DB_NAME,
     password: process.env.DB_PASS,
     port: process.env.DB_PORT,
 });
-// Use the X-Ray middleware
-app.use(AWSXRay.express.openSegment('SimpleAWSNodejsApp'));
 
 app.use(bodyParser.json());
 
@@ -41,9 +36,6 @@ app.post('/data', async(req, res) => {
         res.sendStatus(500);
     }
 });
-// Close the X-Ray segment
-app.use(AWSXRay.express.closeSegment());
-
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Server is listening on port ${port}`);
