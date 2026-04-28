@@ -6,12 +6,15 @@ Parameters:
     Description: 'The master user name for PostgreSQL.'
     Type: String
     Default: SimpleAWS
-  DbPassword:
-    Description: 'The master user password for PostgreSQL.'
-    NoEcho: true
+  AuroraPostgreSQLEngineVersion:
+    Description: 'Aurora PostgreSQL engine version. Use a currently supported version in your Region.'
     Type: String
-    MinLength: 8
-    MaxLength: 41
+    Default: '16.8'
+  ServiceDesiredCount:
+    Description: 'Number of ECS tasks to run. Use 0 for the first stack creation, push the image, then update to 2.'
+    Type: Number
+    Default: 0
+    MinValue: 0
 
 Mappings:
   SubnetConfig:
@@ -258,6 +261,14 @@ Resources:
         Ref: "PrivateRouteTable1"
 
   ## Database
+  DatabasePasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: !Sub "Generated PostgreSQL password for stack ${AWS::StackName}"
+      GenerateSecretString:
+        PasswordLength: 32
+        ExcludePunctuation: true
+
   DBEncryptionKMSKey:
     Type: AWS::KMS::Key
     Properties:
@@ -290,7 +301,7 @@ Resources:
       DBClusterIdentifier: !Join [ '-', [ 'SimpleAWS', 'cluster', !Ref 'AWS::StackName' ] ]
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       Engine: 'aurora-postgresql'
-      EngineVersion: '14.4'
+      EngineVersion: !Ref AuroraPostgreSQLEngineVersion
       Port: 5432
       EngineMode: provisioned
       BackupRetentionPeriod: 7
@@ -299,12 +310,10 @@ Resources:
       VpcSecurityGroupIds: 
         - !GetAtt SimpleAWSDatabaseSG.GroupId
       MasterUsername: !Ref DbUsername
-      MasterUserPassword: !Ref DbPassword
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${DatabasePasswordSecret}:SecretString}}"
       EnableIAMDatabaseAuthentication: false
       KmsKeyId: !Ref DBEncryptionKMSKey
       StorageEncrypted: true
-    DependsOn:
-      - DatabaseSubnetGroup
 
   RDSDBInstance1: 
     Type: "AWS::RDS::DBInstance"
@@ -313,7 +322,7 @@ Resources:
       DBInstanceClass: 'db.t4g.medium'
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       Engine: 'aurora-postgresql'
-      EngineVersion: '14.4'
+      EngineVersion: !Ref AuroraPostgreSQLEngineVersion
       AvailabilityZone: 
         Fn::GetAtt:
           - PrivateSubnet0
@@ -325,7 +334,7 @@ Resources:
       DBInstanceClass: 'db.t4g.medium'
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       Engine: 'aurora-postgresql'
-      EngineVersion: '14.4'
+      EngineVersion: !Ref AuroraPostgreSQLEngineVersion
       AvailabilityZone: 
         Fn::GetAtt:
           - PrivateSubnet1
@@ -346,10 +355,10 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: !Ref TaskExecutionRole
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: SimpleAWSNodejsApp
-          Image: httpd
+          Image: !Sub "${ECRRepository.RepositoryUri}:latest"
           PortMappings:
             - ContainerPort: 3000
           Environment:
@@ -359,10 +368,11 @@ Resources:
               Value: !GetAtt DatabaseCluster.Endpoint.Port
             - Name: DB_USER
               Value: !Ref DbUsername
-            - Name: DB_PASS
-              Value: !Ref DbPassword
             - Name: DB_NAME
               Value: 'SimpleAWS'
+          Secrets:
+            - Name: DB_PASS
+              ValueFrom: !Ref DatabasePasswordSecret
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -384,6 +394,15 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: ReadDatabasePasswordSecret
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref DatabasePasswordSecret
 
   SimpleAWSNodejsService:
     Type: AWS::ECS::Service
@@ -391,10 +410,11 @@ Resources:
       Cluster: !Ref SimpleAWSECSCluster
       LaunchType: FARGATE
       TaskDefinition: !Ref SimpleAWSNodejsAppTaskDefinition
-      DesiredCount: 2
+      DesiredCount: !Ref ServiceDesiredCount
       ServiceName: SimpleAWSNodejsService
       NetworkConfiguration:
         AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
           Subnets:
             - !Ref PublicSubnet0
             - !Ref PublicSubnet1
@@ -453,7 +473,7 @@ Resources:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
       MaxCapacity: 10
-      MinCapacity: 2
+      MinCapacity: !Ref ServiceDesiredCount
       ResourceId: !Sub service/${SimpleAWSECSCluster}/${SimpleAWSNodejsService}
       RoleARN: !GetAtt AutoScalingServiceLinkedRole.Arn
       ScalableDimension: ecs:service:DesiredCount
@@ -552,6 +572,10 @@ Outputs:
     Description: ECR Repository URL
     Value: !GetAtt ECRRepository.RepositoryUri
 
+  ECRRegistryURL:
+    Description: ECR registry host for Docker login
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}"
+
   DatabaseEndpoint:
     Description: The database endpoint for the RDS Aurora cluster
     Value: !GetAtt DatabaseCluster.Endpoint.Address
@@ -561,7 +585,8 @@ Outputs:
   PushDockerImageCommands:
     Description: Commands to push the Docker image to ECR
     Value: !Sub |
-      aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${ECRRepository.RepositoryUri}
-      docker buildx build --platform=linux/amd64 -t simpleawsnodejsapp .
+      aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}
+      docker build --platform=linux/amd64 -t simpleawsnodejsapp .
       docker tag simpleawsnodejsapp:latest ${ECRRepository.RepositoryUri}:latest
       docker push ${ECRRepository.RepositoryUri}:latest
+      # After the image is pushed, update the stack parameter ServiceDesiredCount to 2.
