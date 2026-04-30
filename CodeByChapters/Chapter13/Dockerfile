@@ -11,7 +11,7 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 COPY . .
 
 # The book now uses OpenTelemetry/ADOT for new tracing work. Run an ADOT Collector
-# sidecar or CloudWatch Agent in ECS and point OTEL_EXPORTER_OTLP_ENDPOINT at it.
+# sidecar or CloudWatch Agent in ECS and point OTEL_EXPORTER_OTLP_TRACES_ENDPOINT at it.
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
