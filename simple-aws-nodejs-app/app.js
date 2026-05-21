@@ -13,6 +13,10 @@ const pool = new Pool({
 
 app.use(bodyParser.json());
 
+app.get('/health', (req, res) => {
+  res.sendStatus(200);
+});
+
 app.get('/data', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM data');

@@ -9,12 +9,16 @@ Parameters:
   AuroraPostgreSQLEngineVersion:
     Description: 'Aurora PostgreSQL engine version. Use a currently supported version in your Region.'
     Type: String
-    Default: '16.8'
+    Default: '16.13'
   ServiceDesiredCount:
     Description: 'Number of ECS tasks to run. Use 0 for the first stack creation, push the image, then update to 2.'
     Type: Number
     Default: 0
     MinValue: 0
+  ImageTag:
+    Description: 'Container image tag to deploy. Use a unique tag, such as a commit SHA, after pushing the image.'
+    Type: String
+    Default: bootstrap
 
 Mappings:
   SubnetConfig:
@@ -358,7 +362,7 @@ Resources:
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: SimpleAWSNodejsApp
-          Image: !Sub "${ECRRepository.RepositoryUri}:latest"
+          Image: !Sub "${ECRRepository.RepositoryUri}:${ImageTag}"
           PortMappings:
             - ContainerPort: 3000
           Environment:
@@ -586,7 +590,8 @@ Outputs:
     Description: Commands to push the Docker image to ECR
     Value: !Sub |
       aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}
-      docker build --platform=linux/amd64 -t simpleawsnodejsapp .
-      docker tag simpleawsnodejsapp:latest ${ECRRepository.RepositoryUri}:latest
-      docker push ${ECRRepository.RepositoryUri}:latest
-      # After the image is pushed, update the stack parameter ServiceDesiredCount to 2.
+      IMAGE_TAG=$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M%S)
+      docker build --platform=linux/amd64 -t simpleawsnodejsapp:$IMAGE_TAG .
+      docker tag simpleawsnodejsapp:$IMAGE_TAG ${ECRRepository.RepositoryUri}:$IMAGE_TAG
+      docker push ${ECRRepository.RepositoryUri}:$IMAGE_TAG
+      # After the image is pushed, update the stack parameters ImageTag=$IMAGE_TAG and ServiceDesiredCount=2.

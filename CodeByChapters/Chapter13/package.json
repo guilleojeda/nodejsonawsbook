@@ -2,17 +2,20 @@
   "name": "simple-aws-nodejs-app-tracing",
   "version": "1.0.0",
   "private": true,
+  "description": "OpenTelemetry tracing sample for Building Highly Available Applications on AWS.",
+  "author": "Guille Ojeda",
+  "license": "MIT",
   "scripts": {
     "start": "node -r ./tracing.js app.js"
   },
   "dependencies": {
-    "@opentelemetry/auto-instrumentations-node": "^0.73.0",
-    "@opentelemetry/exporter-trace-otlp-grpc": "^0.216.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.76.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.218.0",
     "@opentelemetry/id-generator-aws-xray": "^2.1.0",
     "@opentelemetry/propagator-aws-xray": "^2.2.0",
-    "@opentelemetry/sdk-node": "^0.216.0",
+    "@opentelemetry/sdk-node": "^0.218.0",
     "body-parser": "^1.20.5",
-    "express": "^4.22.1",
-    "pg": "^8.20.0"
+    "express": "^4.22.2",
+    "pg": "^8.21.0"
   }
 }
