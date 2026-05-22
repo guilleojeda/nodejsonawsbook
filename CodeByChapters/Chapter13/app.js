@@ -15,6 +15,29 @@ const pool = new Pool({
 
 app.use(bodyParser.json());
 
+function hasDatabaseConfig() {
+    return Boolean(
+        process.env.DB_USER &&
+        process.env.DB_HOST &&
+        process.env.DB_NAME &&
+        process.env.DB_PASS &&
+        process.env.DB_PORT
+    );
+}
+
+async function initializeDatabase() {
+    if (!hasDatabaseConfig()) {
+        return;
+    }
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS data (
+            id SERIAL PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    `);
+}
+
 app.get('/health', (req, res) => {
     res.sendStatus(200);
 });
@@ -41,6 +64,14 @@ app.post('/data', async(req, res) => {
     }
 });
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Server is listening on port ${port}`);
-});
+
+initializeDatabase()
+    .then(() => {
+        app.listen(port, () => {
+            console.log(`Server is listening on port ${port}`);
+        });
+    })
+    .catch((err) => {
+        console.error('Failed to initialize database', err);
+        process.exit(1);
+    });
