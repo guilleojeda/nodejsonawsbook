@@ -477,6 +477,8 @@ Resources:
 
   SimpleAWSNodejsScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DependsOn:
+      - SimpleAWSNodejsService
     Properties:
       MaxCapacity: 10
       MinCapacity: !Ref ServiceDesiredCount
