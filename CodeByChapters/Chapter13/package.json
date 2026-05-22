@@ -6,7 +6,9 @@
   "author": "Guille Ojeda",
   "license": "MIT",
   "scripts": {
-    "start": "node -r ./tracing.js app.js"
+    "start": "node -r ./tracing.js app.js",
+    "smoke": "node scripts/smoke-test.js --preload=./tracing.js",
+    "test": "npm run smoke"
   },
   "dependencies": {
     "@opentelemetry/auto-instrumentations-node": "^0.76.0",

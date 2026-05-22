@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "smoke": "node scripts/smoke-test.js",
+    "test": "npm run smoke"
   },
   "keywords": [],
   "author": "Guille Ojeda",
