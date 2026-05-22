@@ -410,6 +410,8 @@ Resources:
 
   SimpleAWSNodejsService:
     Type: AWS::ECS::Service
+    DependsOn:
+      - SimpleAWSNodejsListener
     Properties:
       Cluster: !Ref SimpleAWSECSCluster
       LaunchType: FARGATE
