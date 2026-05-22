@@ -480,7 +480,7 @@ Resources:
     Properties:
       MaxCapacity: 10
       MinCapacity: !Ref ServiceDesiredCount
-      ResourceId: !Sub service/${SimpleAWSECSCluster}/${SimpleAWSNodejsService}
+      ResourceId: !Sub service/${SimpleAWSECSCluster}/SimpleAWSNodejsService
       RoleARN: !GetAtt AutoScalingServiceLinkedRole.Arn
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
