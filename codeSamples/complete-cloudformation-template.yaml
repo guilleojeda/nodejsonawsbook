@@ -19,6 +19,10 @@ Parameters:
     Description: 'Container image tag to deploy. Use a unique tag, such as a commit SHA, after pushing the image.'
     Type: String
     Default: bootstrap
+  ADOTCollectorImage:
+    Description: 'ADOT Collector image used as the ECS sidecar for OpenTelemetry traces.'
+    Type: String
+    Default: public.ecr.aws/aws-observability/aws-otel-collector:latest
 
 Mappings:
   SubnetConfig:
@@ -354,18 +358,27 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: SimpleAWSNodejsApp
-      Cpu: 256
-      Memory: 512
+      Cpu: 512
+      Memory: 1024
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
       ContainerDefinitions:
         - Name: SimpleAWSNodejsApp
           Image: !Sub "${ECRRepository.RepositoryUri}:${ImageTag}"
+          Essential: true
+          DependsOn:
+            - ContainerName: ADOTCollector
+              Condition: START
           PortMappings:
             - ContainerPort: 3000
           Environment:
+            - Name: OTEL_SERVICE_NAME
+              Value: SimpleAWSNodejsApp
+            - Name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+              Value: http://127.0.0.1:4317
             - Name: DB_HOST
               Value: !GetAtt DatabaseCluster.Endpoint.Address
             - Name: DB_PORT
@@ -383,6 +396,44 @@ Resources:
               awslogs-group: SimpleAWSNodejsAppLogs
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
+        - Name: ADOTCollector
+          Image: !Ref ADOTCollectorImage
+          Essential: true
+          PortMappings:
+            - ContainerPort: 4317
+              Protocol: tcp
+            - ContainerPort: 4318
+              Protocol: tcp
+          Environment:
+            - Name: AOT_CONFIG_CONTENT
+              Value: !Sub |
+                receivers:
+                  otlp:
+                    protocols:
+                      grpc:
+                        endpoint: 0.0.0.0:4317
+                      http:
+                        endpoint: 0.0.0.0:4318
+
+                processors:
+                  batch:
+
+                exporters:
+                  awsxray:
+                    region: ${AWS::Region}
+
+                service:
+                  pipelines:
+                    traces:
+                      receivers: [otlp]
+                      processors: [batch]
+                      exporters: [awsxray]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: SimpleAWSNodejsAppLogs
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: adot
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
@@ -407,6 +458,32 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref DatabasePasswordSecret
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: WriteXRayTelemetry
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                  - xray:GetSamplingStatisticSummaries
+                Resource: '*'
 
   SimpleAWSNodejsService:
     Type: AWS::ECS::Service
