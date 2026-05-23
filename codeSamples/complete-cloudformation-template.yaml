@@ -22,7 +22,7 @@ Parameters:
   ADOTCollectorImage:
     Description: 'ADOT Collector image used as the ECS sidecar for OpenTelemetry traces.'
     Type: String
-    Default: public.ecr.aws/aws-observability/aws-otel-collector:v0.47.0
+    Default: public.ecr.aws/aws-observability/aws-otel-collector:v0.48.0
 
 Mappings:
   SubnetConfig:
