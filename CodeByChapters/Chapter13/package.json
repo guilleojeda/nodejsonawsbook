@@ -2,15 +2,17 @@
   "name": "simple-aws-nodejs-app-tracing",
   "version": "1.0.0",
   "private": true,
-  "description": "OpenTelemetry tracing sample for Building Highly Available Applications on AWS.",
+  "description": "OpenTelemetry tracing and custom metrics sample for Building Highly Available Applications on AWS.",
   "author": "Guille Ojeda",
   "license": "MIT",
   "scripts": {
     "start": "node -r ./tracing.js app.js",
     "smoke": "node scripts/smoke-test.js --preload=./tracing.js",
-    "test": "npm run smoke"
+    "metrics:test": "node scripts/metrics-test.js",
+    "test": "npm run metrics:test && npm run smoke"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.0.0",
     "@opentelemetry/auto-instrumentations-node": "^0.76.0",
     "@opentelemetry/exporter-trace-otlp-grpc": "^0.218.0",
     "@opentelemetry/id-generator-aws-xray": "^2.1.0",

@@ -379,6 +379,12 @@ Resources:
               Value: SimpleAWSNodejsApp
             - Name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
               Value: http://127.0.0.1:4317
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: METRIC_NAMESPACE
+              Value: SimpleAWSNodejsApp/Custom
+            - Name: ENVIRONMENT
+              Value: production
             - Name: DB_HOST
               Value: !GetAtt DatabaseCluster.Endpoint.Address
             - Name: DB_PORT
@@ -472,10 +478,17 @@ Resources:
             Action:
               - sts:AssumeRole
       Policies:
-        - PolicyName: WriteXRayTelemetry
+        - PolicyName: WriteApplicationTelemetry
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    cloudwatch:namespace: SimpleAWSNodejsApp/Custom
               - Effect: Allow
                 Action:
                   - xray:PutTraceSegments
