@@ -8,7 +8,7 @@ The examples are organized by chapter so readers can compare the book's code and
 
 - `simple-aws-nodejs-app/`: baseline app used throughout the book.
 - `CodeByChapters/`: chapter-specific snapshots and samples.
-- `codeSamples/`: larger reusable samples, including the complete CloudFormation template from Appendix A.
+- `codeSamples/`: larger reusable samples, including the core CloudFormation template from Appendix A.
 
 ## Local checks
 
@@ -18,4 +18,4 @@ These checks do not replace the full AWS release proof from the book. They confi
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections, errata, and post-publication updates. The final manuscript edition references release tag `v2026.05.23`.
+Use this repository's Issues tab for corrections, errata, and post-publication updates. The final manuscript edition references release tag `v2026.05.24`.
