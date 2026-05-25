@@ -18,4 +18,4 @@ These checks do not replace the full AWS release proof from the book. They confi
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections, errata, and post-publication updates. The final manuscript edition references release tag `v2026.05.24`.
+Use this repository's Issues tab for corrections, errata, and post-publication updates. The final manuscript edition references release tag `v2026.05.25`.

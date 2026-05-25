@@ -5,12 +5,12 @@ const {
 } = require('pg');
 const bodyParser = require('body-parser');
 
-const pool = new Pool({ //replace these values
-    user: 'your_database_user',
-    host: 'your_cluster_endpoint',
-    database: 'your_database_name',
-    password: 'your_database_password',
-    port: 5432,
+const pool = new Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASS,
+    port: parseInt(process.env.DB_PORT || '5432'),
 });
 app.use(bodyParser.json());
 
