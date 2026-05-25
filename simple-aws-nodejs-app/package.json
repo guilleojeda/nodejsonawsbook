@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Baseline Node.js application for Building Highly Available Applications on AWS.",
   "main": "app.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node app.js",
     "smoke": "node scripts/smoke-test.js",

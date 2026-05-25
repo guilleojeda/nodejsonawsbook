@@ -5,6 +5,9 @@
   "description": "OpenTelemetry tracing and custom metrics sample for Building Highly Available Applications on AWS.",
   "author": "Guille Ojeda",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node -r ./tracing.js app.js",
     "smoke": "node scripts/smoke-test.js --preload=./tracing.js",

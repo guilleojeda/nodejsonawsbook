@@ -10,6 +10,16 @@ The examples are organized by chapter so readers can compare the book's code and
 - `CodeByChapters/`: chapter-specific snapshots and samples.
 - `codeSamples/`: larger reusable samples, including the core CloudFormation template from Appendix A.
 
+## Node version
+
+Use Node.js 24, the Active LTS line used for this edition's local checks and Docker images. If you use `nvm`, run this from the repository root before installing dependencies:
+
+```bash
+nvm use
+```
+
+The runnable package manifests require Node.js 22 or newer so readers on the previous maintained LTS line can still run the samples, but Node.js 24 is the reference version for this release.
+
 ## Local checks
 
 The baseline app and Chapter 13 app include small `npm test` checks. The smoke checks start each app on a temporary local port and verify that `/health` returns HTTP 200 OK. Chapter 13 also checks that the custom CloudWatch metric payload uses the expected namespace and dimensions, and that metric publishing failures do not break the app.
