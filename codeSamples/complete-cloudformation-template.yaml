@@ -351,8 +351,6 @@ Resources:
   ## ECS
   SimpleAWSECSCluster:
     Type: AWS::ECS::Cluster
-    Properties:
-      ClusterName: SimpleAWSNodejsAppCluster
 
   SimpleAWSNodejsAppTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -399,7 +397,7 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: SimpleAWSNodejsAppLogs
+              awslogs-group: !Ref CloudWatchLogsGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
         - Name: ADOTCollector
@@ -437,7 +435,7 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: SimpleAWSNodejsAppLogs
+              awslogs-group: !Ref CloudWatchLogsGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: adot
 
@@ -507,7 +505,6 @@ Resources:
       LaunchType: FARGATE
       TaskDefinition: !Ref SimpleAWSNodejsAppTaskDefinition
       DesiredCount: !Ref ServiceDesiredCount
-      ServiceName: SimpleAWSNodejsService
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
@@ -528,7 +525,6 @@ Resources:
   SimpleAWSNodejsLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: SimpleAWSNodejsLB
       Type: application
       Scheme: internet-facing
       Subnets:
@@ -540,7 +536,6 @@ Resources:
   SimpleAWSNodejsTG:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: SimpleAWSNodejsTG
       Port: 3000
       Protocol: HTTP
       VpcId: !Ref VPC
@@ -567,12 +562,13 @@ Resources:
 
   SimpleAWSNodejsScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
-    DependsOn:
-      - SimpleAWSNodejsService
     Properties:
       MaxCapacity: 10
       MinCapacity: !Ref ServiceDesiredCount
-      ResourceId: !Sub service/${SimpleAWSECSCluster}/SimpleAWSNodejsService
+      ResourceId: !Sub
+        - service/${ClusterName}/${ServiceName}
+        - ClusterName: !Ref SimpleAWSECSCluster
+          ServiceName: !GetAtt SimpleAWSNodejsService.Name
       RoleARN: !GetAtt AutoScalingServiceLinkedRole.Arn
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
@@ -608,22 +604,19 @@ Resources:
   CloudWatchLogsGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: SimpleAWSNodejsAppLogs
+      LogGroupName: !Sub /ecs/${AWS::StackName}/SimpleAWSNodejsApp
       RetentionInDays: 14
 
   ## ECR
 
   ECRRepository:
     Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: simpleawsnodejsapp
 
   ## Security Groups
 
   SimpleAWSNodejsAppSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: SimpleAWSNodejsAppSG
       GroupDescription: Security Group for the Simple AWS Nodejs App
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -635,7 +628,6 @@ Resources:
   SimpleAWSDatabaseSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: SimpleAWSDatabaseSG
       GroupDescription: Security Group for the Simple AWS Database
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -647,7 +639,6 @@ Resources:
   SimpleAWSNodejsAppLBSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: SimpleAWSNodejsAppLBSG
       GroupDescription: Security Group for the Simple AWS Nodejs App Load Balancer
       VpcId: !Ref VPC
       SecurityGroupIngress:
