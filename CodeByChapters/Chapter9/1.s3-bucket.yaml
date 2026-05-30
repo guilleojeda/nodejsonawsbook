@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Simple AWS S3 Bucket
+Description: Private S3 bucket managed by CloudFormation for Chapter 9
+
 Resources:
-  MyS3Bucket:
+  TutorialBucket:
     Type: AWS::S3::Bucket
     Properties:
       PublicAccessBlockConfiguration:
@@ -9,4 +10,16 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-      BucketName: my-unique-simple-aws-bucket-name
+      Tags:
+        - Key: Project
+          Value: SimpleAWS
+        - Key: Chapter
+          Value: Chapter9
+
+Outputs:
+  BucketName:
+    Description: Name of the S3 bucket created by this stack
+    Value: !Ref TutorialBucket
+  BucketArn:
+    Description: ARN of the S3 bucket created by this stack
+    Value: !GetAtt TutorialBucket.Arn

@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Private S3 bucket managed by CloudFormation for Chapter 9, with versioning enabled
+
+Resources:
+  TutorialBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Project
+          Value: SimpleAWS
+        - Key: Chapter
+          Value: Chapter9
+
+Outputs:
+  BucketName:
+    Description: Name of the S3 bucket created by this stack
+    Value: !Ref TutorialBucket
+  BucketArn:
+    Description: ARN of the S3 bucket created by this stack
+    Value: !GetAtt TutorialBucket.Arn
