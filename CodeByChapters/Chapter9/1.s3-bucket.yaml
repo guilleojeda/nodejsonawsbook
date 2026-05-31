@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Private S3 bucket managed by CloudFormation for Chapter 9
 
 Resources:
-  TutorialBucket:
+  SimpleAWSBucket:
     Type: AWS::S3::Bucket
     Properties:
       PublicAccessBlockConfiguration:
@@ -19,7 +19,7 @@ Resources:
 Outputs:
   BucketName:
     Description: Name of the S3 bucket created by this stack
-    Value: !Ref TutorialBucket
+    Value: !Ref SimpleAWSBucket
   BucketArn:
     Description: ARN of the S3 bucket created by this stack
-    Value: !GetAtt TutorialBucket.Arn
+    Value: !GetAtt SimpleAWSBucket.Arn

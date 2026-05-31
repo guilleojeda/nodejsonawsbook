@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
 
-# Start the app with OpenTelemetry instrumentation preloaded.
-exec node -r ./tracing.js app.js
+# The default Docker CMD runs `npm start`, which preloads tracing.js.
+# Keep command overrides such as `docker run image npm test` working.
+exec "$@"
