@@ -3,14 +3,13 @@
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "ecr:GetAuthorizationToken"
-      ],
+      "Action": "ecr:GetAuthorizationToken",
       "Resource": "*"
     },
     {
       "Effect": "Allow",
       "Action": [
+        "ecr:BatchGetImage",
         "ecr:BatchCheckLayerAvailability",
         "ecr:CompleteLayerUpload",
         "ecr:DescribeRepositories",
@@ -18,21 +17,56 @@
         "ecr:PutImage",
         "ecr:UploadLayerPart"
       ],
-      "Resource": "arn:aws:ecr:us-east-1:your-account-id:repository/simpleawsnodejsapp"
+      "Resource":
+        "YOUR_ECR_REPOSITORY_ARN"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "logs:CreateLogGroup",
+      "Resource":
+        "YOUR_CODEBUILD_LOG_GROUP_ARN"
     },
     {
       "Effect": "Allow",
       "Action": [
-        "logs:CreateLogGroup",
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ],
-      "Resource": "arn:aws:logs:us-east-1:your-account-id:*"
+      "Resource":
+        "YOUR_CODEBUILD_LOG_GROUP_ARN:log-stream:*"
     },
     {
       "Effect": "Allow",
       "Action": "secretsmanager:GetSecretValue",
-      "Resource": "arn:aws:secretsmanager:us-east-1:your-account-id:secret:DockerHubCredentials-*"
+      "Resource":
+        "YOUR_DOCKERHUB_SECRET_ARN_PATTERN"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codeconnections:GetConnection",
+        "codeconnections:GetConnectionToken"
+      ],
+      "Resource":
+        "YOUR_CODECONNECTION_ARN"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetBucketAcl",
+        "s3:GetBucketLocation",
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::your-artifact-bucket"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::your-artifact-bucket/*"
     }
   ]
 }

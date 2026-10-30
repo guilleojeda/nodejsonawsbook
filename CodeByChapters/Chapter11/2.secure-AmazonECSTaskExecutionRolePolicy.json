@@ -2,28 +2,33 @@
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "GetECRAuthorizationToken",
       "Effect": "Allow",
-      "Action": [
-        "ecr:GetAuthorizationToken"
-      ],
+      "Action": "ecr:GetAuthorizationToken",
       "Resource": "*"
     },
     {
+      "Sid": "PullOnlyTheApplicationImage",
       "Effect": "Allow",
       "Action": [
         "ecr:BatchCheckLayerAvailability",
         "ecr:GetDownloadUrlForLayer",
         "ecr:BatchGetImage"
       ],
-      "Resource": "arn:aws:ecr:us-east-1:your-account-id:repository/simpleawsnodejsapp"
+      "Resource":
+        "YOUR_ECR_REPOSITORY_ARN"
     },
     {
+      "Sid": "WriteOnlyApplicationLogs",
       "Effect": "Allow",
       "Action": [
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ],
-      "Resource": "arn:aws:logs:us-east-1:your-account-id:log-group:/ecs/simpleawsnodejsapp:log-stream:*"
+      "Resource": [
+        "YOUR_APP_LOG_GROUP_ARN",
+        "YOUR_APP_LOG_GROUP_ARN:*"
+      ]
     }
   ]
 }

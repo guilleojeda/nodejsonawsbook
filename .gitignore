@@ -4,3 +4,7 @@ npm-debug.log*
 .env
 .env.*
 !.env.example
+
+# Local working notes and the RDS bundle downloaded before the Chapter 13 build.
+/.work/
+/CodeByChapters/Chapter13/certs/global-bundle.pem

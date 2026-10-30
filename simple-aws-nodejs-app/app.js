@@ -4,11 +4,11 @@ const { Pool } = require('pg');
 const bodyParser = require('body-parser');
 
 const pool = new Pool({
-  user: 'your_database_user',
-  host: 'localhost',
-  database: 'your_database_name',
-  password: 'your_database_password',
-  port: 5432,
+  user: process.env.DB_USER || 'PostgresUser',
+  host: process.env.DB_HOST || 'postgres',
+  database: process.env.DB_NAME || 'SimpleAWSDB',
+  password: process.env.DB_PASS || 'veryverysecret',
+  port: parseInt(process.env.DB_PORT || '5432', 10),
 });
 
 app.use(bodyParser.json());
@@ -38,7 +38,8 @@ app.post('/data', async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
+const port = Number(process.env.PORT || 3000);
+const server = app.listen(port, '0.0.0.0', () => {
+  const address = server.address();
+  console.log(`Server is listening on port ${address.port}`);
 });

@@ -11,6 +11,8 @@ const traceExporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
     serviceName: process.env.OTEL_SERVICE_NAME || 'SimpleAWSNodejsApp',
     traceExporter,
+    metricReaders: [],
+    logRecordProcessors: [],
     idGenerator: new AWSXRayIdGenerator(),
     textMapPropagator: new AWSXRayPropagator(),
     instrumentations: [getNodeAutoInstrumentations()],
@@ -20,6 +22,6 @@ sdk.start();
 
 process.on('SIGTERM', () => {
     sdk.shutdown()
-        .catch((error) => console.error('Error shutting down OpenTelemetry', error))
-        .finally(() => process.exit(0));
+        .then(() => process.exit(0))
+        .catch(() => process.exit(1));
 });

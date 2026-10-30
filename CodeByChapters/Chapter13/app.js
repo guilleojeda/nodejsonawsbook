@@ -11,7 +11,7 @@ const pool = new Pool({
     host: process.env.DB_HOST,
     database: process.env.DB_NAME,
     password: process.env.DB_PASS,
-    port: parseInt(process.env.DB_PORT || '5432'),
+    port: parseInt(process.env.DB_PORT || '5432', 10),
 });
 
 app.use(bodyParser.json());
@@ -23,8 +23,7 @@ function hasDatabaseConfig() {
         process.env.DB_USER &&
         process.env.DB_HOST &&
         process.env.DB_NAME &&
-        process.env.DB_PASS &&
-        process.env.DB_PORT
+        process.env.DB_PASS
     );
 }
 
@@ -80,12 +79,12 @@ app.post('/data', async(req, res) => {
         recordMetric('ResponseTime', Date.now() - startTime, 'Milliseconds');
     }
 });
-const port = process.env.PORT || 3000;
+const port = Number(process.env.PORT || 3000);
 
 initializeDatabase()
     .then(() => {
-        app.listen(port, () => {
-            console.log(`Server is listening on port ${port}`);
+        const server = app.listen(port, '0.0.0.0', () => {
+            console.log(`Server is listening on port ${server.address().port}`);
         });
     })
     .catch((err) => {

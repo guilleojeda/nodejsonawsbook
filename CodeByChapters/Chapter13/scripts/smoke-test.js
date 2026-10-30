@@ -4,7 +4,7 @@ const { spawn } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
 
 const appDir = path.resolve(__dirname, '..');
-const port = process.env.SMOKE_PORT || String(32000 + Math.floor(Math.random() * 10000));
+const port = process.env.SMOKE_PORT || '0';
 const preloadArg = process.argv.find((arg) => arg.startsWith('--preload='));
 const nodeArgs = [];
 
@@ -14,9 +14,9 @@ if (preloadArg) {
 
 nodeArgs.push('app.js');
 
-function requestHealth() {
+function requestHealth(targetPort) {
   return new Promise((resolve, reject) => {
-    const req = http.get(`http://127.0.0.1:${port}/health`, (res) => {
+    const req = http.get(`http://127.0.0.1:${targetPort}/health`, (res) => {
       let body = '';
       res.setEncoding('utf8');
       res.on('data', (chunk) => {
@@ -62,7 +62,14 @@ async function main() {
       }
 
       try {
-        const response = await requestHealth();
+        const reportedPort = output.match(/Server is listening on port (\d+)/);
+        const targetPort = Number(port) || Number(reportedPort && reportedPort[1]);
+        if (!targetPort) {
+          await delay(250);
+          continue;
+        }
+
+        const response = await requestHealth(targetPort);
         if (response.statusCode === 200 && response.body.trim() === 'OK') {
           console.log('Smoke test passed: /health returned HTTP 200 OK.');
           return;

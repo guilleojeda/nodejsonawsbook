@@ -1,20 +1,32 @@
-# Use the official Node.js 24 LTS image as the base image
+# Use the official Node.js image as the base image
 FROM node:24-bookworm-slim
 
-# Set the working directory
+# Create app directory and set ownership
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install the app's dependencies
-RUN npm ci
+# Install dependencies
+RUN npm ci && npm cache clean --force
 
-# Copy the rest of the app's source code to the working directory
-COPY . .
+# Create the non-root user before copying app source
+RUN useradd -m nodeuser
 
-# Expose the port that the app will run on
+COPY --chown=nodeuser:nodeuser . .
+# Switch to the non-root user for runtime
+USER nodeuser
+
+# Expose the port the app runs on
 EXPOSE 3000
+
+# Define health check
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD node -e "require('http') \
+    .get('http://localhost:' + (process.env.PORT || \
+      3000) + '/health', res => process.exit( \
+        res.statusCode === 200 ? 0 : 1)) \
+    .on('error', () => process.exit(1))"
 
 # Start the app
 CMD [ "npm", "start" ]

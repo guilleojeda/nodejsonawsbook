@@ -5,16 +5,16 @@ WORKDIR /app
 
 COPY package*.json ./
 
-# Use npm ci when a lockfile is present; fall back to npm install for chapter snippets.
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+# Install the dependencies from the committed lockfile.
+RUN npm ci && npm cache clean --force
 
-COPY . .
-
-# The book now uses OpenTelemetry/ADOT for new tracing work. Run an ADOT Collector
-# sidecar or CloudWatch Agent in ECS and point OTEL_EXPORTER_OTLP_TRACES_ENDPOINT at it.
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+# Copy application files and the downloaded public CA bundle with non-root ownership.
+COPY --chown=node:node . .
+RUN test -s certs/global-bundle.pem || { \
+  echo "Download the RDS CA bundle to certs/global-bundle.pem before building." >&2; \
+  exit 1; \
+}
+USER node
 
 EXPOSE 3000
 

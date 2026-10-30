@@ -1,9 +1,32 @@
+# Node.js dependencies
 node_modules
 npm-debug.log
-.env
+
+# Version control
 .git
 .gitignore
-.DS_Store
-coverage
-*.log
+.gitattributes
 
+# Development
+.idea
+.vscode
+*.swp
+*.swo
+
+# Testing
+coverage
+.nyc_output
+test
+__tests__
+
+# Documentation
+docs
+*.md
+
+# Environment variables
+.env
+.env.*
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
