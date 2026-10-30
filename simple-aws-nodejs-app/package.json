@@ -4,7 +4,7 @@
   "description": "Baseline Node.js application for Building Highly Available Applications on AWS.",
   "main": "app.js",
   "engines": {
-    "node": ">=22"
+    "node": ">=26"
   },
   "scripts": {
     "start": "node app.js",

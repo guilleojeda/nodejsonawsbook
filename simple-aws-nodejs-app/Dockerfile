@@ -1,5 +1,5 @@
 # Use the official Node.js image as the base image
-FROM node:24-bookworm-slim
+FROM node:26-bookworm-slim
 
 # Create app directory and set ownership
 WORKDIR /app

@@ -2,12 +2,12 @@
 
 Companion code for **Building Highly Available Applications on AWS: From a Single Server to a Scalable and Observable Cloud Architecture**.
 
-Use release [`v2026.10.30`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.10.30) with the final manuscript. It includes the corrected IAM examples, dependency locks, trace-only OpenTelemetry configuration and Appendix A template. Earlier tags are preserved for readers using earlier copies of the book.
+Use release [`v2026.10.30.1`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.10.30.1) with the final manuscript. It uses Node.js 26 LTS and includes the corrected AWS CLI setup, IAM examples, dependency locks, trace-only OpenTelemetry configuration, container shutdown and Appendix A template. Earlier tags are preserved for readers using earlier copies of the book.
 
 ```bash
 git clone https://github.com/guilleojeda/nodejsonawsbook.git
 cd nodejsonawsbook
-git checkout v2026.10.30
+git checkout v2026.10.30.1
 ```
 
 ## Examples and chapter progression
@@ -31,7 +31,7 @@ The chapter snapshots are snippets, not separate npm projects. The baseline and 
 
 ## Node.js and dependencies
 
-Node.js 24 is this edition's reference version. Run `nvm use` from the repository root if you use nvm. The package manifests also support Node.js 22, but Node.js 24 is used for the local and container checks.
+Node.js 26 LTS is this edition's reference version. Run `nvm use` from the repository root if you use nvm. Both package manifests require Node.js 26 or newer. Use the Node.js 26 examples and images throughout the walkthrough.
 
 Use `npm ci` in either runnable app directory to install its recorded dependency tree. Chapter 13 pins the OpenTelemetry packages to the compatible set in the manuscript, disables SDK metric and log exporters, and sends traces to an ADOT Collector. Do not independently update one OpenTelemetry package to a different release family.
 
@@ -76,7 +76,11 @@ The Chapter 13 app creates an `id`/`value` table on a fresh Appendix A database 
 
 Run an ADOT Collector with the app and configure the OTLP endpoint and X-Ray task-role permissions as the book shows. The repository's local smoke check does not establish that traces reached AWS.
 
+The Chapter 13 image starts Node directly with `tracing.js` preloaded, so the Node process receives the container's `SIGTERM` and can flush queued traces before exiting. When adding tracing to the app carried forward from Chapter 4, change its Dockerfile command to `CMD ["node", "-r", "./tracing.js", "app.js"]` too. The package's `npm start` command remains available for local use.
+
 ## AWS examples
+
+The Chapter 3 installer snippets include post-install shell setup. On Linux and macOS, the current-user AWS CLI installer puts its executable in `${XDG_BIN_HOME:-$HOME/.local/bin}`. Add that directory to the current shell's `PATH` and keep the setting in the appropriate shell startup file, as the snippets explain. If you chose a custom `XDG_BIN_HOME`, preserve that setting before the `PATH` line too. On Windows, close and reopen the terminal after installation before checking the version. Confirm which executable runs and that `aws --version` starts with `aws-cli/2` before configuring credentials.
 
 Replace every named placeholder in the IAM policies and buildspec with the resources created for your walkthrough. CloudWatch log-group names are case-sensitive. Use the exact log-group ARN; where the policy appends `:log-stream:*`, start from the ARN without a trailing `:*`. Keep the database-secret read grant alongside the scoped task execution policy.
 
@@ -86,4 +90,4 @@ For Appendix A, create the stack with `ServiceDesiredCount=0`, acknowledge its I
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections and errata. The `v2026.10.30` release synchronizes the examples with the final manuscript.
+Use this repository's Issues tab for corrections and errata. The `v2026.10.30.1` release synchronizes the examples with the final manuscript and its Node.js 26 LTS reference runtime.

@@ -1,5 +1,5 @@
-# Use the official Node.js 24 LTS image as the base image.
-FROM node:24-bookworm-slim
+# Use the official Node.js 26 LTS image as the base image.
+FROM node:26-bookworm-slim
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ USER node
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["node", "-r", "./tracing.js", "app.js"]
 
 #build it with this command:
 #docker build -t simpleawsnodejsapp .
