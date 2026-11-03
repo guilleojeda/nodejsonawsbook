@@ -87,6 +87,9 @@ Resources:
           - "SubnetConfig"
           - "VPC"
           - "CIDR"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-appendix-vpc"
 
   PublicSubnet0:
     Type: "AWS::EC2::Subnet"
@@ -108,6 +111,9 @@ Resources:
           - "Public0"
           - "CIDR"
       MapPublicIpOnLaunch: "true"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-appendix-public1"
 
   PublicSubnet1:
     Type: "AWS::EC2::Subnet"
@@ -129,6 +135,9 @@ Resources:
           - "Public1"
           - "CIDR"
       MapPublicIpOnLaunch: "true"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-appendix-public2"
 
   PrivateSubnet0:
     Type: "AWS::EC2::Subnet"
@@ -149,6 +158,9 @@ Resources:
           - "SubnetConfig"
           - "Private0"
           - "CIDR"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-appendix-private1"
 
   PrivateSubnet1:
     Type: "AWS::EC2::Subnet"
@@ -169,6 +181,9 @@ Resources:
           - "SubnetConfig"
           - "Private1"
           - "CIDR"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-appendix-private2"
 
   InternetGateway:
     Type: "AWS::EC2::InternetGateway"
@@ -374,6 +389,7 @@ Resources:
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: 'db.t4g.medium'
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      PubliclyAccessible: false
       Engine: 'aurora-postgresql'
       EngineVersion: !Ref AuroraPostgreSQLEngineVersion
       AvailabilityZone: 
@@ -386,6 +402,7 @@ Resources:
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: 'db.t4g.medium'
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      PubliclyAccessible: false
       Engine: 'aurora-postgresql'
       EngineVersion: !Ref AuroraPostgreSQLEngineVersion
       AvailabilityZone: 

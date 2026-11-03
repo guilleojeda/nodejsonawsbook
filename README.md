@@ -2,12 +2,12 @@
 
 Companion code for **Building Highly Available Applications on AWS: From a Single Server to a Scalable and Observable Cloud Architecture**.
 
-Use release [`v2026.10.30.1`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.10.30.1) with the final manuscript. It uses Node.js 26 LTS and includes the corrected AWS CLI setup, IAM examples, dependency locks, trace-only OpenTelemetry configuration, container shutdown and Appendix A template. Earlier tags are preserved for readers using earlier copies of the book.
+Use release [`v2026.11.03`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.03) with the final manuscript. It uses Node.js 26 LTS and includes the corrected AWS CLI setup, IAM examples, dependency locks, trace-only OpenTelemetry configuration, container shutdown and Appendix A template. This release describes a fresh dedicated-VPC walkthrough; it does not move resources created from earlier editions. Earlier tags are preserved for readers using earlier copies of the book.
 
 ```bash
 git clone https://github.com/guilleojeda/nodejsonawsbook.git
 cd nodejsonawsbook
-git checkout v2026.10.30.1
+git checkout v2026.11.03
 ```
 
 ## Examples and chapter progression
@@ -80,6 +80,21 @@ The Chapter 13 image starts Node directly with `tracing.js` preloaded, so the No
 
 ## AWS examples
 
+### Walkthrough networking and ownership
+
+The main walkthrough uses one VPC created manually in Chapter 3, named `SimpleAWS-vpc` with CIDR `10.0.0.0/16`. Enable VPC DNS support and hostnames. Create one public subnet and one private subnet in each of two Availability Zones:
+
+| Subnet | Name tag | CIDR | Use |
+| --- | --- | --- | --- |
+| Public 1 | `SimpleAWS-subnet-public1-<AZ>` | `10.0.0.0/24` | ALB, ECS tasks, and temporary database administration host |
+| Public 2 | `SimpleAWS-subnet-public2-<AZ>` | `10.0.1.0/24` | ALB and ECS tasks |
+| Private 1 | `SimpleAWS-subnet-private1-<AZ>` | `10.0.16.0/20` | Aurora database subnet group |
+| Private 2 | `SimpleAWS-subnet-private2-<AZ>` | `10.0.32.0/20` | Aurora database subnet group |
+
+Public subnets route through an Internet Gateway. Assign a public IPv4 address when launching the temporary EC2 administration host and enable public IP assignment for ECS tasks. Private subnets are isolated, with no NAT gateway or internet route. Create Aurora's database subnet group `simpleaws-db-subnets` from both private subnets and disable public access. Record the VPC and subnet IDs with their names and AZs, then verify those details when selecting the network throughout Chapters 5 and 6; do not use the account's default VPC. The public-task path does not require a NAT gateway or S3 endpoint.
+
+Appendix A is separate: its CloudFormation template creates and owns another VPC, subnets and workloads. The template tags the VPC and subnets with the stack name and `appendix` so they are easy to distinguish from the manual Chapter 3 network. Deleting the Appendix A stack removes its network; handle the retained database snapshot and KMS key as the appendix directs. The manual VPC is outside that stack. After deleting its ECS service and tasks, ALB, any EC2 hosts, Aurora cluster and DB subnet group, and allowing service-managed network interfaces to clear, use the VPC console's Delete VPC workflow. Review the remaining network components it will delete. Verify the recorded VPC/subnet IDs, names and AZs before cleanup so unrelated or default networks are left alone.
+
 The Chapter 3 installer snippets include post-install shell setup. On Linux and macOS, the current-user AWS CLI installer puts its executable in `${XDG_BIN_HOME:-$HOME/.local/bin}`. Add that directory to the current shell's `PATH` and keep the setting in the appropriate shell startup file, as the snippets explain. If you chose a custom `XDG_BIN_HOME`, preserve that setting before the `PATH` line too. On Windows, close and reopen the terminal after installation before checking the version. Confirm which executable runs and that `aws --version` starts with `aws-cli/2` before configuring credentials.
 
 Replace every named placeholder in the IAM policies and buildspec with the resources created for your walkthrough. CloudWatch log-group names are case-sensitive. Use the exact log-group ARN; where the policy appends `:log-stream:*`, start from the ARN without a trailing `:*`. Keep the database-secret read grant alongside the scoped task execution policy.
@@ -90,4 +105,4 @@ For Appendix A, create the stack with `ServiceDesiredCount=0`, acknowledge its I
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections and errata. The `v2026.10.30.1` release synchronizes the examples with the final manuscript and its Node.js 26 LTS reference runtime.
+Use this repository's Issues tab for corrections and errata. The `v2026.11.03` release synchronizes the examples with the final manuscript, dedicated-VPC walkthrough and Node.js 26 LTS reference runtime.
