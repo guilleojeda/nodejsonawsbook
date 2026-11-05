@@ -2,12 +2,12 @@
 
 Companion code for **Building Highly Available Applications on AWS: From a Single Server to a Scalable and Observable Cloud Architecture**.
 
-Use release [`v2026.11.03`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.03) with the final manuscript. It uses Node.js 26 LTS and includes the corrected AWS CLI setup, IAM examples, dependency locks, trace-only OpenTelemetry configuration, container shutdown and Appendix A template. This release describes a fresh dedicated-VPC walkthrough; it does not move resources created from earlier editions. Earlier tags are preserved for readers using earlier copies of the book.
+Use release [`v2026.11.03.1`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.03.1) with the final manuscript. It uses Node.js 26 LTS and includes the corrected AWS CLI setup, IAM examples, dependency locks, trace-only OpenTelemetry configuration, container shutdown and Appendix A template. It also corrects the Chapter 2 nvm installation directory and removes an unused Chapter 13 dependency branch. This release describes a fresh dedicated-VPC walkthrough; it does not move resources created from earlier editions. Earlier tags are preserved for readers using earlier copies of the book.
 
 ```bash
 git clone https://github.com/guilleojeda/nodejsonawsbook.git
 cd nodejsonawsbook
-git checkout v2026.11.03
+git checkout v2026.11.03.1
 ```
 
 ## Examples and chapter progression
@@ -33,7 +33,18 @@ The chapter snapshots are snippets, not separate npm projects. The baseline and 
 
 Node.js 26 LTS is this edition's reference version. Run `nvm use` from the repository root if you use nvm. Both package manifests require Node.js 26 or newer. Use the Node.js 26 examples and images throughout the walkthrough.
 
+The Chapter 2 nvm snippets preserve `NVM_DIR` when set; otherwise they use `$XDG_CONFIG_HOME/nvm` or `$HOME/.nvm`. Installation and loading use the same directory. Keep any custom directory setting consistent across shell sessions.
+
 Use `npm ci` in either runnable app directory to install its recorded dependency tree. Chapter 13 pins the OpenTelemetry packages to the compatible set in the manuscript, disables SDK metric and log exporters, and sends traces to an ADOT Collector. Do not independently update one OpenTelemetry package to a different release family.
+
+Chapter 13 also includes a scoped override from `gcp-metadata@8.1.4` to `gaxios` 7.1.4. It removes an unused transitive filesystem dependency while keeping the OpenTelemetry packages unchanged. Keep the override and its matching lockfile. When recreating the package files from the book's commands, set it before installing the tracing packages:
+
+```bash
+npm pkg set --json \
+  'overrides={"gcp-metadata@8.1.4":{"gaxios":"7.1.4"}}'
+```
+
+For the local Docker examples, use a current Docker Engine, version 28.0.0 or later. Run `docker version` and check the **Server** version if Docker is already installed. Older engines can expose localhost-published ports to other computers on the same local network; see [Docker's port-publishing documentation](https://docs.docker.com/engine/network/port-publishing/). Keep the loopback bindings in the examples.
 
 ## Local checks
 
@@ -105,4 +116,4 @@ For Appendix A, create the stack with `ServiceDesiredCount=0`, acknowledge its I
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections and errata. The `v2026.11.03` release synchronizes the examples with the final manuscript, dedicated-VPC walkthrough and Node.js 26 LTS reference runtime.
+Use this repository's Issues tab for corrections and errata. The `v2026.11.03.1` release keeps the examples synchronized with the final manuscript and dedicated-VPC walkthrough, corrects nvm directory handling, and refreshes the Chapter 13 dependency lock. Node.js 26 LTS remains the reference runtime.
