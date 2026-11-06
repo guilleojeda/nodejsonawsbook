@@ -2,12 +2,12 @@
 
 Companion code for **Building Highly Available Applications on AWS: From a Single Server to a Scalable and Observable Cloud Architecture**.
 
-Use release [`v2026.11.03.1`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.03.1) with the final manuscript. It uses Node.js 26 LTS and includes the corrected AWS CLI setup, IAM examples, dependency locks, trace-only OpenTelemetry configuration, container shutdown and Appendix A template. It also corrects the Chapter 2 nvm installation directory and removes an unused Chapter 13 dependency branch. This release describes a fresh dedicated-VPC walkthrough; it does not move resources created from earlier editions. Earlier tags are preserved for readers using earlier copies of the book.
+Use release [`v2026.11.06`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.06) with the final manuscript. This release clarifies the Chapter 13 database startup check for the Chapter 5 app login. It uses Node.js 26 LTS and follows the dedicated-VPC walkthrough. Earlier tags are available for readers using earlier copies of the book.
 
 ```bash
 git clone https://github.com/guilleojeda/nodejsonawsbook.git
 cd nodejsonawsbook
-git checkout v2026.11.03.1
+git checkout v2026.11.06
 ```
 
 ## Examples and chapter progression
@@ -83,7 +83,13 @@ docker build --platform linux/amd64 -t simpleawsnodejsapp .
 
 Use the task settings in the book or Appendix A: `DB_HOST`, `DB_USER`, `DB_NAME`, `DB_PASS`, `DB_PORT`, `PGSSLMODE=verify-full`, and `NODE_EXTRA_CA_CERTS=/app/certs/global-bundle.pem`. Supply the password through the configured Secrets Manager reference. The writer hostname must remain the TLS verification target.
 
-The Chapter 13 app creates an `id`/`value` table on a fresh Appendix A database before accepting requests, and leaves an existing table unchanged. The manually initialized database in Chapters 2 and 5 also has `created_at`. This startup initializer and use of the master database account are learning shortcuts described in Appendix A.
+The Chapter 5 app login can read and insert rows in the table you created, which also has a `created_at` column. If you use that login, replace the `CREATE TABLE IF NOT EXISTS` query inside `initializeDatabase()` in `CodeByChapters/Chapter13/app.js` with:
+
+```js
+await pool.query('SELECT 1 FROM public.data LIMIT 1');
+```
+
+For a fresh Appendix A database, keep `CREATE TABLE IF NOT EXISTS`. The app creates the `id`/`value` table before accepting requests. Creating the table at startup and using the master database account are learning shortcuts described in Appendix A.
 
 Run an ADOT Collector with the app and configure the OTLP endpoint and X-Ray task-role permissions as the book shows. The repository's local smoke check does not establish that traces reached AWS.
 
@@ -116,4 +122,4 @@ For Appendix A, create the stack with `ServiceDesiredCount=0`, acknowledge its I
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections and errata. The `v2026.11.03.1` release keeps the examples synchronized with the final manuscript and dedicated-VPC walkthrough, corrects nvm directory handling, and refreshes the Chapter 13 dependency lock. Node.js 26 LTS remains the reference runtime.
+Use this repository's Issues tab for corrections and errata. Release `v2026.11.06` documents the Chapter 13 startup check for the Chapter 5 app login. Node.js 26 LTS remains the reference runtime.
