@@ -2,12 +2,12 @@
 
 Companion code for **Building Highly Available Applications on AWS: From a Single Server to a Scalable and Observable Cloud Architecture**.
 
-Use release [`v2026.11.06`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.06) with the final manuscript. This release clarifies the Chapter 13 database startup check for the Chapter 5 app login. It uses Node.js 26 LTS and follows the dedicated-VPC walkthrough. Earlier tags are available for readers using earlier copies of the book.
+Use release [`v2026.11.06.1`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.06.1) with the final manuscript. This documentation correction clarifies the Chapter 13 database startup check for the Chapter 5 app login. It uses Node.js 26 LTS and follows the dedicated-VPC walkthrough. Earlier tags are available for readers using earlier copies of the book.
 
 ```bash
 git clone https://github.com/guilleojeda/nodejsonawsbook.git
 cd nodejsonawsbook
-git checkout v2026.11.06
+git checkout v2026.11.06.1
 ```
 
 ## Examples and chapter progression
@@ -27,7 +27,7 @@ The chapter folders capture different stages of the walkthrough. A local-only li
 | `CodeByChapters/Chapter13/` | Runnable tracing and custom-metrics app used by Appendix A, with a non-root image and its own dependency lockfile. |
 | `codeSamples/complete-cloudformation-template.yaml` | Appendix A's infrastructure template, bootstrap commands and outputs. |
 
-The chapter snapshots are snippets, not separate npm projects. The baseline and Chapter 13 folders contain complete npm projects. Follow the book's incremental edits when building the main walkthrough yourself.
+The chapter snapshots are snippets, not separate npm projects. The baseline and Chapter 13 folders contain complete npm projects. When committing a rebuilt Chapter 13 sample, commit its application, tracing and metrics sources, Dockerfile, package manifests and lockfile, and test scripts together. Follow the book's incremental edits when building the main walkthrough yourself.
 
 ## Node.js and dependencies
 
@@ -72,6 +72,14 @@ Chapter 13 also checks custom metric payloads and that publishing failures remai
 
 From the repository root, download the RDS CA bundle into the application directory before building. Appendix A's output commands do this too.
 
+The Chapter 5 app login can read and insert rows in the table you created, which also has a `created_at` column. If you use that login, replace the `CREATE TABLE IF NOT EXISTS` query inside `initializeDatabase()` in `CodeByChapters/Chapter13/app.js` with this before running `docker build`:
+
+```js
+await pool.query('SELECT 1 FROM public.data LIMIT 1');
+```
+
+For a fresh Appendix A database, keep `CREATE TABLE IF NOT EXISTS`. The app creates the `id`/`value` table before accepting requests. Creating the table at startup and using the master database account are learning shortcuts described in Appendix A.
+
 ```bash
 cd CodeByChapters/Chapter13
 mkdir -p certs
@@ -82,14 +90,6 @@ docker build --platform linux/amd64 -t simpleawsnodejsapp .
 ```
 
 Use the task settings in the book or Appendix A: `DB_HOST`, `DB_USER`, `DB_NAME`, `DB_PASS`, `DB_PORT`, `PGSSLMODE=verify-full`, and `NODE_EXTRA_CA_CERTS=/app/certs/global-bundle.pem`. Supply the password through the configured Secrets Manager reference. The writer hostname must remain the TLS verification target.
-
-The Chapter 5 app login can read and insert rows in the table you created, which also has a `created_at` column. If you use that login, replace the `CREATE TABLE IF NOT EXISTS` query inside `initializeDatabase()` in `CodeByChapters/Chapter13/app.js` with:
-
-```js
-await pool.query('SELECT 1 FROM public.data LIMIT 1');
-```
-
-For a fresh Appendix A database, keep `CREATE TABLE IF NOT EXISTS`. The app creates the `id`/`value` table before accepting requests. Creating the table at startup and using the master database account are learning shortcuts described in Appendix A.
 
 Run an ADOT Collector with the app and configure the OTLP endpoint and X-Ray task-role permissions as the book shows. The repository's local smoke check does not establish that traces reached AWS.
 
@@ -122,4 +122,4 @@ For Appendix A, create the stack with `ServiceDesiredCount=0`, acknowledge its I
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections and errata. Release `v2026.11.06` documents the Chapter 13 startup check for the Chapter 5 app login. Node.js 26 LTS remains the reference runtime.
+Use this repository's Issues tab for corrections and errata. Release `v2026.11.06.1` documents the Chapter 13 startup check for the Chapter 5 app login. Node.js 26 LTS remains the reference runtime.
