@@ -39,7 +39,7 @@
       "Effect": "Allow",
       "Action": "secretsmanager:GetSecretValue",
       "Resource":
-        "YOUR_DOCKERHUB_SECRET_ARN_PATTERN"
+        "YOUR_DOCKERHUB_SECRET_ARN"
     },
     {
       "Effect": "Allow",

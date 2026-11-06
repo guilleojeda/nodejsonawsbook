@@ -637,7 +637,6 @@ Resources:
         - service/${ClusterName}/${ServiceName}
         - ClusterName: !Ref SimpleAWSECSCluster
           ServiceName: !GetAtt SimpleAWSNodejsService.Name
-      RoleARN: !GetAtt AutoScalingServiceLinkedRole.Arn
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
 
@@ -654,22 +653,6 @@ Resources:
         ScaleInCooldown: 300
         ScaleOutCooldown: 60
         TargetValue: 50
-
-  AutoScalingServiceLinkedRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - application-autoscaling.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/\
-          AmazonEC2ContainerServiceAutoscaleRole"
 
   CloudWatchLogsGroup:
     Type: AWS::Logs::LogGroup

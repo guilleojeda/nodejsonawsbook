@@ -33,6 +33,7 @@ async function initializeDatabase() {
     }
 
     await pool.query(`
+        SELECT pg_advisory_xact_lock(hashtext('simple-aws-nodejs-app.data'));
         CREATE TABLE IF NOT EXISTS data (
             id SERIAL PRIMARY KEY,
             value TEXT NOT NULL

@@ -1,0 +1,31 @@
+# Compose v2 uses the Compose Specification; omit version.
+
+
+services:
+  app:
+    build: .
+    image: simpleawsnodejsapp
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - DB_USER=PostgresUser
+      - DB_HOST=postgres
+      - DB_NAME=SimpleAWSDB
+      - DB_PASS=veryverysecret
+      - DB_PORT=5432
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=PostgresUser
+      - POSTGRES_PASSWORD=veryverysecret
+      - POSTGRES_DB=SimpleAWSDB
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
