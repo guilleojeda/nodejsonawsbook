@@ -2,12 +2,12 @@
 
 Companion code for **Building Highly Available Applications on AWS: From a Single Server to a Scalable and Observable Cloud Architecture**.
 
-Use release [`v2026.11.06.3`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.06.3) with the final manuscript. It uses Node.js 26 LTS and follows the dedicated-VPC walkthrough. Earlier tags are available for readers using earlier copies of the book.
+Use release [`v2026.11.06.4`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.06.4) with the final manuscript. It uses Node.js 26 LTS and follows the dedicated-VPC walkthrough. Earlier tags are available for readers using earlier copies of the book.
 
 ```bash
 git clone https://github.com/guilleojeda/nodejsonawsbook.git
 cd nodejsonawsbook
-git checkout v2026.11.06.3
+git checkout v2026.11.06.4
 ```
 
 ## Examples and chapter progression
@@ -72,7 +72,7 @@ Chapter 13 also checks custom metric payloads and that publishing failures remai
 
 ## Building Chapter 13 for Aurora
 
-The image needs the public Amazon RDS CA bundle at `certs/global-bundle.pem`. If the application is built from a separate application repository, commit this public bundle there so the Chapter 12 pipeline includes it; it contains no database password or private key. This companion repository intentionally ignores the bundle, so download or copy it into the Chapter 13 build context before a local build. Never replace it with a private key or disable certificate verification. Appendix A's output commands download the bundle into their build directory too.
+The image needs the public Amazon RDS CA bundle at `certs/global-bundle.pem`. This companion checkout intentionally ignores the locally downloaded bundle so a local build does not stage generated build material. If you copy the Chapter 13 app into a separate application repository, its app-root `.gitignore` leaves this public bundle trackable; commit it there so the Chapter 12 pipeline includes it. It contains no database password or private key. Never replace it with a private key or disable certificate verification. Appendix A's output commands download the bundle into their build directory too.
 
 The Chapter 5 app login can read and insert rows in the table you created, which also has a `created_at` column. If you use that login, replace the entire startup `await pool.query(...)` block inside `initializeDatabase()` in `CodeByChapters/Chapter13/app.js` with this before running `docker build`:
 
@@ -120,8 +120,8 @@ Replace every named placeholder in the IAM policies and buildspec with the resou
 
 The first Chapter 11 policy is deliberately broad so the book can explain the correction. Use the scoped replacement for the completed walkthrough. Never put AWS credentials, database passwords or Docker Hub tokens into these files, an image or Git.
 
-For Appendix A, create the stack with `ServiceDesiredCount=0`, acknowledge its IAM resources, and run the generated image-push commands from `CodeByChapters/Chapter13`. Then update `ImageTag` to the pushed tag and `ServiceDesiredCount` to `2`. Wait for the two targets to become healthy, then check `/health` and POST and GET `/data` through the stack's `ECSALBDNSName` output. Follow the appendix's cleanup instructions for the stack and anything you retain, such as the KMS key.
+For Appendix A, create the stack with `ServiceDesiredCount=0` and a required `AllowedClientCidr` value. Use your current public IPv4 address with `/32`, such as `198.51.100.24/32`; the template accepts only IPv4 `/32` values and initially opens only ALB TCP port 80 to that address. A command such as `curl -4 --fail --silent https://checkip.amazonaws.com` can show the address to verify before adding `/32`. Acknowledge its IAM resources and run the generated image-push commands from `CodeByChapters/Chapter13`. Then update `ImageTag` to the pushed tag and `ServiceDesiredCount` to `2`. Wait for the two targets to become healthy, then check `/health` and POST and GET `/data` through the stack's `ECSALBDNSName` output. Follow the appendix's cleanup instructions for the stack and anything you retain, such as the KMS key. The manuscript covers adding ACM/TLS and optionally CloudFront later; those changes are outside this initial sample template.
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections and errata. Release `v2026.11.06.3` adds downloadable walkthrough examples, serializes first-start database initialization, scopes CodeBuild to the exact Docker Hub secret, and uses the ECS service-linked role for scaling.
+Use this repository's Issues tab for corrections and errata. Release `v2026.11.06.4` adds downloadable walkthrough examples, serializes first-start database initialization, scopes CodeBuild to the exact Docker Hub secret, uses the ECS service-linked role for scaling, and narrows the initial ALB ingress to a required client CIDR.
