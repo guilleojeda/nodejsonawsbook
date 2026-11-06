@@ -24,4 +24,4 @@ CMD ["node", "-r", "./tracing.js", "app.js"]
 #docker build -t simpleawsnodejsapp .
 
 #run it with this command:
-#docker run -p 3000:3000 simpleawsnodejsapp
+#docker run -p 127.0.0.1:3000:3000 simpleawsnodejsapp

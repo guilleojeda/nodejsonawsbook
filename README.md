@@ -2,12 +2,12 @@
 
 Companion code for **Building Highly Available Applications on AWS: From a Single Server to a Scalable and Observable Cloud Architecture**.
 
-Use release [`v2026.11.06.1`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.06.1) with the final manuscript. This documentation correction clarifies the Chapter 13 database startup check for the Chapter 5 app login. It uses Node.js 26 LTS and follows the dedicated-VPC walkthrough. Earlier tags are available for readers using earlier copies of the book.
+Use release [`v2026.11.06.2`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.06.2) with the final manuscript. It uses Node.js 26 LTS and follows the dedicated-VPC walkthrough. Earlier tags are available for readers using earlier copies of the book.
 
 ```bash
 git clone https://github.com/guilleojeda/nodejsonawsbook.git
 cd nodejsonawsbook
-git checkout v2026.11.06.1
+git checkout v2026.11.06.2
 ```
 
 ## Examples and chapter progression
@@ -46,6 +46,8 @@ npm pkg set --json \
 
 For the local Docker examples, use a current Docker Engine, version 28.0.0 or later. Run `docker version` and check the **Server** version if Docker is already installed. Older engines can expose localhost-published ports to other computers on the same local network; see [Docker's port-publishing documentation](https://docs.docker.com/engine/network/port-publishing/). Keep the loopback bindings in the examples.
 
+In Chapter 2, the app runs on your computer, so it connects through a PostgreSQL host port. In Chapter 4, the app and database share a Docker network. Leave the PostgreSQL port unpublished there; the app still uses port 5432 inside the network, and you can run `psql` with `docker compose exec`.
+
 ## Local checks
 
 From the repository root:
@@ -70,7 +72,7 @@ Chapter 13 also checks custom metric payloads and that publishing failures remai
 
 ## Building Chapter 13 for Aurora
 
-From the repository root, download the RDS CA bundle into the application directory before building. Appendix A's output commands do this too.
+The image needs the public Amazon RDS CA bundle at `certs/global-bundle.pem`. If the application is built from a separate application repository, commit this public bundle there so the Chapter 12 pipeline includes it; it contains no database password or private key. This companion repository intentionally ignores the bundle, so download or copy it into the Chapter 13 build context before a local build. Never replace it with a private key or disable certificate verification. Appendix A's output commands download the bundle into their build directory too.
 
 The Chapter 5 app login can read and insert rows in the table you created, which also has a `created_at` column. If you use that login, replace the `CREATE TABLE IF NOT EXISTS` query inside `initializeDatabase()` in `CodeByChapters/Chapter13/app.js` with this before running `docker build`:
 
@@ -122,4 +124,4 @@ For Appendix A, create the stack with `ServiceDesiredCount=0`, acknowledge its I
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections and errata. Release `v2026.11.06.1` documents the Chapter 13 startup check for the Chapter 5 app login. Node.js 26 LTS remains the reference runtime.
+Use this repository's Issues tab for corrections and errata. Release `v2026.11.06.2` aligns the local Docker networking and RDS CA bundle instructions with the manuscript and binds the Chapter 13 local app example to loopback.
