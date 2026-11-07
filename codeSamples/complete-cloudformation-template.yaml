@@ -39,7 +39,9 @@ Parameters:
       port 80. Use your current public IPv4 address with /32, for
       example 198.51.100.24/32.
     Type: String
-    AllowedPattern: '^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/32$'
+    AllowedPattern:
+      "^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}\
+      (25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/32$"
     ConstraintDescription: >-
       Enter an IPv4 address with four decimal octets from 0 through
       255 followed by /32, such as 198.51.100.24/32.

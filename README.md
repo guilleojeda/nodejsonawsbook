@@ -2,12 +2,12 @@
 
 Companion code for **Building Highly Available Applications on AWS: From a Single Server to a Scalable and Observable Cloud Architecture**.
 
-Use release [`v2026.11.06.4`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.06.4) with the final manuscript. It uses Node.js 26 LTS and follows the dedicated-VPC walkthrough. Earlier tags are available for readers using earlier copies of the book.
+Use release [`v2026.11.07`](https://github.com/guilleojeda/nodejsonawsbook/releases/tag/v2026.11.07) with the final manuscript. It uses Node.js 26 LTS and follows the dedicated-VPC walkthrough. Earlier tags are available for readers using earlier copies of the book.
 
 ```bash
 git clone https://github.com/guilleojeda/nodejsonawsbook.git
 cd nodejsonawsbook
-git checkout v2026.11.06.4
+git checkout v2026.11.07
 ```
 
 ## Examples and chapter progression
@@ -29,6 +29,8 @@ The chapter folders capture different stages of the walkthrough. A local-only li
 
 The chapter snapshots are snippets, not separate npm projects. The baseline and Chapter 13 folders contain complete npm projects. When committing a rebuilt Chapter 13 sample, commit its application, tracing and metrics sources, Dockerfile, package manifests and lockfile, and test scripts together. Follow the book's incremental edits when building the main walkthrough yourself.
 
+This repository is MIT-licensed. When redistributing a substantial copy, including a separately copied application directory, carry the root `LICENSE` file and its copyright and permission notice with it.
+
 ## Node.js and dependencies
 
 Node.js 26 LTS is this edition's reference version. Run `nvm use` from the repository root if you use nvm. Both package manifests require Node.js 26 or newer. Use the Node.js 26 examples and images throughout the walkthrough.
@@ -45,6 +47,8 @@ npm pkg set --json \
 ```
 
 For the local Docker examples, use a current Docker Engine, version 28.0.0 or later. Run `docker version` and check the **Server** version if Docker is already installed. Older engines can expose localhost-published ports to other computers on the same local network; see [Docker's port-publishing documentation](https://docs.docker.com/engine/network/port-publishing/). Keep the loopback bindings in the examples.
+
+The checked-in deployment Dockerfiles set `NODE_ENV=production` after installing dependencies. Keep this setting for the manual Chapter 4 image and the Chapter 13 image used by Appendix A: malformed JSON receives HTTP 400 without Express internals in the response, while valid requests keep their existing behavior.
 
 In Chapter 2, the app runs on your computer, so it connects through a PostgreSQL host port. In Chapter 4, the app and database share a Docker network. Leave the PostgreSQL port unpublished there; the app still uses port 5432 inside the network, and you can run `psql` with `docker compose exec`. Copy the baseline Compose file to your app directory as `docker-compose.yml`. To follow the environment-file variant, copy `docker-compose.env.yml` in its place and use `.env.example` to create a local `.env`.
 
@@ -124,4 +128,4 @@ For Appendix A, create the stack with `ServiceDesiredCount=0` and a required `Al
 
 ## Errata and edition notes
 
-Use this repository's Issues tab for corrections and errata. Release `v2026.11.06.4` adds downloadable walkthrough examples, serializes first-start database initialization, scopes CodeBuild to the exact Docker Hub secret, uses the ECS service-linked role for scaling, and narrows the initial ALB ingress to a required client CIDR.
+Use this repository's Issues tab for corrections and errata. Release `v2026.11.07` adds downloadable walkthrough examples, serializes first-start database initialization, scopes CodeBuild to the exact Docker Hub secret, uses the ECS service-linked role for scaling, narrows the initial ALB ingress to a required client CIDR, and keeps malformed-JSON responses from exposing Express internals in deployment images.

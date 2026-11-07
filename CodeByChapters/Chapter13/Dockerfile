@@ -16,6 +16,9 @@ RUN test -s certs/global-bundle.pem || { \
 }
 USER node
 
+# Do not expose internal parser details in production responses.
+ENV NODE_ENV=production
+
 EXPOSE 3000
 
 CMD ["node", "-r", "./tracing.js", "app.js"]

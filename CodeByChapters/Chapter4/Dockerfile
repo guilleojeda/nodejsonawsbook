@@ -17,6 +17,9 @@ COPY --chown=nodeuser:nodeuser . .
 # Switch to the non-root user for runtime
 USER nodeuser
 
+# Do not expose internal parser details in production responses.
+ENV NODE_ENV=production
+
 # Expose the port the app runs on
 EXPOSE 3000
 
